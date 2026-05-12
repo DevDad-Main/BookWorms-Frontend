@@ -1,0 +1,51 @@
+.theme-light {
+  --color-bg-primary: #FAF8F5;
+  --color-bg-secondary: #F5F2ED;
+  --color-bg-tertiary: #EDE9E2;
+  --color-bg-elevated: #E5E0D8;
+  --color-bg-hover: #DFDAD2;
+  --color-bg-glass: rgba(237, 233, 226, 0.6);
+
+  --color-text-primary: #1A1C1D;
+  --color-text-secondary: #4A4742;
+  --color-text-tertiary: #7A7570;
+  --color-text-muted: #9A9590;
+
+  --color-accent: #8B7355;
+  --color-accent-hover: #7A6348;
+  --color-accent-muted: rgba(139, 115, 85, 0.12);
+  --color-accent-subtle: rgba(139, 115, 85, 0.06);
+
+  --color-espresso: #6B5B45;
+  --color-espresso-light: #8B7B65;
+
+  --color-blue-subtle: #4A7C8C;
+  --color-blue-muted: rgba(74, 124, 140, 0.1);
+
+  --color-success: #4A7A49;
+  --color-success-muted: rgba(74, 122, 73, 0.1);
+  --color-warning: #A88A3A;
+  --color-warning-muted: rgba(168, 138, 58, 0.1);
+  --color-danger: #A84C4C;
+  --color-danger-muted: rgba(168, 76, 76, 0.1);
+  --color-info: #4A7C8C;
+  --color-info-muted: rgba(74, 124, 140, 0.1);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.1);
+}
+
+.theme-light {
+  .card-base {
+    background: var(--color-bg-tertiary);
+    border-color: rgba(0, 0, 0, 0.06);
+  }
+
+  .card-hover:hover {
+    background: var(--color-bg-elevated);
+    border-color: rgba(0, 0, 0, 0.08);
+  }
+}

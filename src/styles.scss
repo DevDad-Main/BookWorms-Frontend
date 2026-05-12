@@ -1,0 +1,174 @@
+@use './styles/variables' as v;
+@use './styles/typography' as *;
+@use './styles/mixins' as *;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: v.$font-primary;
+  background-color: v.$color-bg-primary;
+  color: v.$color-text-primary;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: v.$color-accent-muted;
+  color: v.$color-accent;
+}
+
+a {
+  color: v.$color-accent;
+  text-decoration: none;
+  transition: color v.$transition-fast;
+
+  &:hover {
+    color: v.$color-accent-hover;
+  }
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+input, textarea, select, button {
+  font-family: inherit;
+}
+
+.app-container {
+  max-width: v.$max-content-width;
+  margin: 0 auto;
+  padding: 0 v.$spacing-lg;
+
+  @media (max-width: 768px) {
+    padding: 0 v.$spacing-md;
+  }
+}
+
+.section-title {
+  font-family: v.$font-display;
+  font-weight: 600;
+  font-size: 1.5rem;
+  margin-bottom: v.$spacing-lg;
+  color: v.$color-text-primary;
+}
+
+.page-enter {
+  animation: fadeInUp 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.skeleton-pulse {
+  background: linear-gradient(
+    90deg,
+    v.$color-bg-tertiary 25%,
+    v.$color-bg-elevated 50%,
+    v.$color-bg-tertiary 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: v.$radius-sm;
+}
+
+.glass-panel {
+  background: v.$color-bg-glass;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.content-card {
+  background: v.$color-bg-tertiary;
+  border-radius: v.$radius-lg;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all v.$transition-base;
+
+  &:hover {
+    background: v.$color-bg-elevated;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: v.$shadow-md;
+  }
+}
+
+.text-accent {
+  color: v.$color-accent;
+}
+
+.text-muted {
+  color: v.$color-text-muted;
+}
+
+.page-header {
+  margin-bottom: v.$spacing-2xl;
+
+  h1 {
+    margin-bottom: v.$spacing-sm;
+  }
+
+  p {
+    color: v.$color-text-secondary;
+    font-size: 1.05rem;
+  }
+}
+
+.grid-auto {
+  display: grid;
+  gap: v.$spacing-lg;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.grid-2 {
+  display: grid;
+  gap: v.$spacing-lg;
+  grid-template-columns: repeat(2, 1fr);
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grid-3 {
+  display: grid;
+  gap: v.$spacing-lg;
+  grid-template-columns: repeat(3, 1fr);
+
+  @media (max-width: 992px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 576px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grid-4 {
+  display: grid;
+  gap: v.$spacing-lg;
+  grid-template-columns: repeat(4, 1fr);
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 576px) {
+    grid-template-columns: 1fr;
+  }
+}
