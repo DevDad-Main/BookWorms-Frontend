@@ -3,14 +3,13 @@ import { BorrowingService } from '../../../core/services/borrowing.service';
 import { BorrowedBook } from '../../../core/models/borrowing.model';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-borrowed-books',
   standalone: true,
-  imports: [ButtonComponent, BadgeComponent, IconComponent, SkeletonComponent, EmptyStateComponent],
+  imports: [ButtonComponent, BadgeComponent, SkeletonComponent, EmptyStateComponent],
   template: `<div class="page-enter">
     <div class="page-header">
       <h1>Books I've Borrowed</h1>

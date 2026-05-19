@@ -6,13 +6,12 @@ import { AvatarComponent } from '../../shared/components/avatar/avatar.component
 import { StatsCardComponent } from '../../shared/components/stats-card/stats-card.component';
 import { BookCardComponent } from '../../shared/components/book-card/book-card.component';
 import { IconComponent } from '../../shared/components/icon/icon.component';
-import { ButtonComponent } from '../../shared/components/button/button.component';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [AvatarComponent, StatsCardComponent, BookCardComponent, IconComponent, ButtonComponent, SkeletonComponent],
+  imports: [AvatarComponent, StatsCardComponent, BookCardComponent, IconComponent, SkeletonComponent],
   template: `<div class="page-enter">
     @if (loading()) {
       <div class="profile-skeleton">

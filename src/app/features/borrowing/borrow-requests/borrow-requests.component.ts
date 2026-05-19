@@ -1,14 +1,13 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { BorrowingService } from '../../../core/services/borrowing.service';
 import { BorrowedBook } from '../../../core/models/borrowing.model';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-borrow-requests',
   standalone: true,
-  imports: [IconComponent, SkeletonComponent, EmptyStateComponent],
+  imports: [SkeletonComponent, EmptyStateComponent],
   template: `<div class="page-enter">
     <div class="page-header">
       <h1>Borrow Requests</h1>

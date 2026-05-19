@@ -44,10 +44,10 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
           </div>
 
           <div class="cover-actions">
-            @if (b.shareable && !isOwner) {
+            @if (b.shareable && !isOwner()) {
               <app-button label="Request to Borrow" icon="swap" size="lg" (onClick)="requestBorrow(b.id)" [loading]="borrowing()" />
             }
-            @if (isOwner) {
+            @if (isOwner()) {
               <app-button
                 [label]="b.shareable ? 'Unshare' : 'Share'"
                 [icon]="b.shareable ? 'x' : 'share'"
