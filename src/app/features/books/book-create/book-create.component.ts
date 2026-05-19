@@ -125,10 +125,7 @@ export class BookCreateComponent {
       shareable: this.shareable
     }).subscribe({
       next: (bookId) => this.router.navigate(['/books', bookId]),
-      error: (err) => {
-        this.loading.set(false);
-        this.errors.set({ general: err.error?.error || 'Failed to create book.' });
-      }
+      error: () => this.loading.set(false)
     });
   }
 }

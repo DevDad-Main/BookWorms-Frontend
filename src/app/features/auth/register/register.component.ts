@@ -144,10 +144,7 @@ export class RegisterComponent {
           queryParams: { email: this.email }
         });
       },
-      error: (err) => {
-        this.loading.set(false);
-        this.errors.set({ general: err.error?.error || 'Registration failed. Please try again.' });
-      }
+      error: () => this.loading.set(false)
     });
   }
 }

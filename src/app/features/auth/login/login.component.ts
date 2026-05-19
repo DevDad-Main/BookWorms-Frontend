@@ -95,10 +95,7 @@ export class LoginComponent {
     this.loading.set(true);
     this.authService.login({ email: this.email, password: this.password }).subscribe({
       next: () => this.router.navigate(['/dashboard']),
-      error: (err) => {
-        this.loading.set(false);
-        this.errors.set({ general: err.error?.error || err.error?.description || 'Invalid credentials. Please try again.' });
-      }
+      error: () => this.loading.set(false)
     });
   }
 }
