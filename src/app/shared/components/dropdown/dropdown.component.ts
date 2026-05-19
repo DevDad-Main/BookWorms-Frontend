@@ -13,7 +13,7 @@ export interface DropdownItem {
   standalone: true,
   imports: [IconComponent],
   template: `<div class="dropdown">
-    <button class="trigger" (click)="toggle()">
+    <button class="trigger" (click)="toggle($event)">
       <ng-content select="[trigger]" />
     </button>
     @if (isOpen()) {
@@ -43,7 +43,8 @@ export class DropdownComponent {
   readonly onSelect = output<DropdownItem>();
   readonly isOpen = signal(false);
 
-  toggle(): void {
+  toggle(event: Event): void {
+    event.stopPropagation();
     this.isOpen.update(v => !v);
   }
 
