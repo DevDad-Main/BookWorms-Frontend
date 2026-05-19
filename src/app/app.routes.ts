@@ -41,6 +41,17 @@ export const routes: Routes = [
     ]
   },
   {
+    path: 'activate-account',
+    canActivate: [publicGuard],
+    loadComponent: () => import('./layouts/auth-layout/auth-layout.component').then(m => m.AuthLayoutComponent),
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./features/auth/verify-email/verify-email.component').then(m => m.VerifyEmailComponent)
+      }
+    ]
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./layouts/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
