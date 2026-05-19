@@ -75,7 +75,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
                 <span>{{ book.authorName }}</span>
               </div>
               <div class="list-owner">
-                <span>{{ book.ownerName }}</span>
+                <span>{{ book.owner }}</span>
               </div>
               <div class="list-status">
                 <span class="status-dot" [class.available]="book.shareable"></span>
@@ -128,7 +128,7 @@ export class BookListComponent implements OnInit {
 
   loadBooks(): void {
     this.loading.set(true);
-    this.bookService.getAllBooks({ shareable: true }).subscribe(books => {
+    this.bookService.getAllBooksAsList({ size: 50 }).subscribe(books => {
       this.books.set(books);
       this.loading.set(false);
     });
@@ -136,13 +136,7 @@ export class BookListComponent implements OnInit {
 
   onSearch(query: string): void {
     this.searchQuery.set(query);
-    if (query.trim()) {
-      this.bookService.searchBooks(query).subscribe(books => {
-        this.books.set(books);
-      });
-    } else {
-      this.loadBooks();
-    }
+    this.loadBooks();
   }
 
   navigateDetail(id: number): void {

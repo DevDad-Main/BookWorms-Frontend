@@ -1,9 +1,8 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { BorrowingService } from '../../../core/services/borrowing.service';
-import { BorrowedBook, BorrowStatus } from '../../../core/models/borrowing.model';
+import { BorrowedBook } from '../../../core/models/borrowing.model';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
+import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
@@ -11,7 +10,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 @Component({
   selector: 'app-return-books',
   standalone: true,
-  imports: [DatePipe, ButtonComponent, StatusBadgeComponent, IconComponent, SkeletonComponent, EmptyStateComponent],
+  imports: [ButtonComponent, BadgeComponent, IconComponent, SkeletonComponent, EmptyStateComponent],
   template: `<div class="page-enter">
     <div class="page-header">
       <h1>Returns</h1>
@@ -28,7 +27,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
         }
       </div>
     } @else {
-      @if (lentBooks().length === 0) {
+      @if (items().length === 0) {
         <app-empty-state
           icon="refresh"
           title="No return activity"
@@ -44,25 +43,20 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
           @for (item of filteredItems(); track item.id) {
             <div class="return-card">
               <div class="return-icon">
-                <app-icon [name]="item.status === 'RETURN_REQUESTED' ? 'refresh' : 'check'" size="20" />
+                <app-icon [name]="item.returned && !item.returnApproved ? 'refresh' : 'check'" size="20" />
               </div>
               <div class="return-info">
-                <h4>{{ item.bookTitle }}</h4>
-                <p>Borrowed by {{ item.borrowerName }}</p>
-                <span class="return-date">
-                  @if (item.status === 'RETURN_REQUESTED') {
-                    Return requested {{ item.returnedAt || '' | date: 'mediumDate' }}
-                  } @else {
-                    Returned {{ item.returnedAt | date: 'mediumDate' }}
-                  }
-                </span>
+                <h4>{{ item.title }}</h4>
+                <p>{{ item.authorName }}</p>
               </div>
               <div class="return-status">
-                <app-status-badge [status]="item.status" />
+                <app-badge [variant]="item.returnApproved ? 'info' : 'warning'">
+                  {{ item.returnApproved ? 'Returned' : 'Return Requested' }}
+                </app-badge>
               </div>
               <div class="return-actions">
-                @if (item.status === BorrowStatus.RETURN_REQUESTED) {
-                  <app-button label="Confirm Return" size="sm" variant="outline" (onClick)="confirmReturn(item.id)" />
+                @if (item.returned && !item.returnApproved) {
+                  <app-button label="Confirm Return" size="sm" variant="outline" (onClick)="confirmReturn(item.id)" [loading]="confirmingId() === item.id" />
                 }
               </div>
             </div>
@@ -84,23 +78,21 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
     .return-icon { width: 40px; height: 40px; border-radius: 10px; background: rgba(198, 169, 114, 0.1); display: flex; align-items: center; justify-content: center; color: #C6A972; flex-shrink: 0; }
     .return-info { flex: 1; min-width: 200px; }
     .return-info h4 { font-size: 0.9rem; font-weight: 600; color: #F5F1E8; margin: 0 0 2px; }
-    .return-info p { font-size: 0.8rem; color: #5C5750; margin: 0 0 4px; }
-    .return-date { font-size: 0.78rem; color: #5C5750; }
+    .return-info p { font-size: 0.8rem; color: #5C5750; margin: 0; }
     .return-status { flex-shrink: 0; }
     .return-actions { flex-shrink: 0; }`
 })
 export class ReturnBooksComponent implements OnInit {
   private borrowingService = inject(BorrowingService);
-  readonly BorrowStatus = BorrowStatus;
-  readonly lentBooks = signal<BorrowedBook[]>([]);
+  readonly items = signal<BorrowedBook[]>([]);
   readonly loading = signal(true);
   readonly activeTab = signal<'pending' | 'returned'>('pending');
-
+  readonly confirmingId = signal<number | null>(null);
   readonly filteredItems = signal<BorrowedBook[]>([]);
 
   ngOnInit(): void {
-    this.borrowingService.getLentBooks().subscribe(b => {
-      this.lentBooks.set(b);
+    this.borrowingService.getReturnedBooksAsList().subscribe(b => {
+      this.items.set(b);
       this.filterItems();
       this.loading.set(false);
     });
@@ -108,22 +100,20 @@ export class ReturnBooksComponent implements OnInit {
 
   filterItems(): void {
     if (this.activeTab() === 'pending') {
-      this.filteredItems.set(this.lentBooks().filter(b =>
-        b.status === BorrowStatus.RETURN_REQUESTED || b.status === BorrowStatus.APPROVED
-      ));
+      this.filteredItems.set(this.items().filter(b => b.returned && !b.returnApproved));
     } else {
-      this.filteredItems.set(this.lentBooks().filter(b =>
-        b.status === BorrowStatus.RETURNED
-      ));
+      this.filteredItems.set(this.items().filter(b => b.returnApproved));
     }
   }
 
-  confirmReturn(borrowingId: number): void {
-    this.borrowingService.approveReturn(borrowingId).subscribe(() => {
-      this.lentBooks.update(list =>
-        list.map(b => b.id === borrowingId ? { ...b, status: BorrowStatus.RETURNED } : b)
+  confirmReturn(bookId: number): void {
+    this.confirmingId.set(bookId);
+    this.borrowingService.approveReturn(bookId).subscribe(() => {
+      this.items.update(list =>
+        list.map(b => b.id === bookId ? { ...b, returnApproved: true } : b)
       );
       this.filterItems();
+      this.confirmingId.set(null);
     });
   }
 }

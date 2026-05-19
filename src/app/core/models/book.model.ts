@@ -2,30 +2,25 @@ export interface Book {
   id: number;
   title: string;
   authorName: string;
-  isbn?: string;
-  synopsis?: string;
-  ownerName: string;
-  ownerId: number;
+  isbn: string;
+  synopsis: string;
+  owner: string;
   cover?: string;
-  shareable: boolean;
+  rate: number;
   archived: boolean;
-  rating?: number;
-  createdAt: string;
-  updatedAt?: string;
+  shareable: boolean;
 }
 
 export interface BookRequest {
+  id?: number;
   title: string;
   authorName: string;
-  isbn?: string;
-  synopsis?: string;
+  isbn: string;
+  synopsis: string;
   shareable: boolean;
 }
 
 export interface BookFilters {
-  title?: string;
-  author?: string;
-  owner?: string;
-  shareable?: boolean;
-  archived?: boolean;
+  page?: number;
+  size?: number;
 }

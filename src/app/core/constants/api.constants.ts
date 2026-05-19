@@ -1,33 +1,25 @@
 export const API = {
   BASE_URL: 'http://localhost:8088/api/v1',
   AUTH: {
-    LOGIN: '/auth/login',
+    LOGIN: '/auth/authenticate',
     REGISTER: '/auth/register',
     VERIFY: '/auth/activate-account',
-    REFRESH: '/auth/refresh-token'
   },
   BOOKS: {
     BASE: '/books',
     BY_ID: (id: number) => `/books/${id}`,
-    SHARE: (id: number) => `/books/${id}/share`,
-    ARCHIVE: (id: number) => `/books/${id}/archive`,
-    BORROW: (id: number) => `/books/${id}/borrow`,
-    RETURN: (id: number) => `/books/${id}/return`,
-    APPROVE_RETURN: (id: number) => `/books/${id}/return/approve`,
-    SEARCH: '/books/search'
+    OWNER: '/books/owner',
+    BORROWED: '/books/borrowed',
+    RETURNED: '/books/returned',
+    SHAREABLE: (id: number) => `/books/shareable/${id}`,
+    ARCHIVED: (id: number) => `/books/archived/${id}`,
+    BORROW: (id: number) => `/books/borrowed/${id}`,
+    RETURN: (id: number) => `/books/borrow/return/${id}`,
+    APPROVE_RETURN: (id: number) => `/books/borrow/return/approve/${id}`,
+    COVER: (id: number) => `/books/cover/${id}`,
   },
-  BORROWING: {
-    BORROWED: '/borrowing/borrowed',
-    LENT: '/borrowing/lent',
-    REQUESTS: '/borrowing/requests',
-    APPROVE: (id: number) => `/borrowing/${id}/approve`,
-    REJECT: (id: number) => `/borrowing/${id}/reject`,
-    RETURN: (id: number) => `/borrowing/${id}/return`,
-    APPROVE_RETURN: (id: number) => `/borrowing/${id}/return/approve`
+  FEEDBACK: {
+    BASE: '/feedbacks',
+    BY_BOOK: (bookId: number) => `/feedbacks/book/${bookId}`,
   },
-  USERS: {
-    PROFILE: '/users/profile',
-    BY_ID: (id: number) => `/users/${id}`,
-    BOOKS: (id: number) => `/users/${id}/books`
-  }
 } as const;

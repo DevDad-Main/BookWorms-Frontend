@@ -1,18 +1,16 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { BorrowingService } from '../../../core/services/borrowing.service';
-import { BorrowedBook, BorrowStatus } from '../../../core/models/borrowing.model';
+import { BorrowedBook } from '../../../core/models/borrowing.model';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
+import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
-import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
 
 @Component({
   selector: 'app-borrowed-books',
   standalone: true,
-  imports: [DatePipe, ButtonComponent, StatusBadgeComponent, IconComponent, SkeletonComponent, EmptyStateComponent, AvatarComponent],
+  imports: [ButtonComponent, BadgeComponent, IconComponent, SkeletonComponent, EmptyStateComponent],
   template: `<div class="page-enter">
     <div class="page-header">
       <h1>Books I've Borrowed</h1>
@@ -28,7 +26,6 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
               <app-skeleton width="60%" height="16px" />
               <app-skeleton width="40%" height="12px" />
             </div>
-            <app-skeleton width="100px" height="28px" radius="8px" />
           </div>
         }
       </div>
@@ -45,28 +42,18 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
       <div class="borrowed-list">
         @for (item of borrowedBooks(); track item.id) {
           <div class="borrowed-card">
-            <div class="borrowed-cover">
-              @if (item.bookCover) {
-                <img [src]="item.bookCover" [alt]="item.bookTitle" />
-              } @else {
-                <app-icon name="book" size="20" />
-              }
-            </div>
             <div class="borrowed-info">
-              <h4>{{ item.bookTitle }}</h4>
-              <p>{{ item.bookAuthor }}</p>
-              <div class="borrowed-owner">
-                <app-avatar [name]="item.ownerName" size="sm" />
-                <span>{{ item.ownerName }}</span>
-              </div>
+              <h4>{{ item.title }}</h4>
+              <p>{{ item.authorName }}</p>
             </div>
             <div class="borrowed-status">
-              <app-status-badge [status]="item.status" />
-              <span class="borrowed-date">Since {{ item.approvedAt || item.requestedAt | date: 'mediumDate' }}</span>
+              <app-badge [variant]="item.returned ? 'warning' : 'success'">
+                {{ item.returned ? 'Return Requested' : 'Currently Borrowed' }}
+              </app-badge>
             </div>
             <div class="borrowed-action">
-              @if (item.status === BorrowStatus.APPROVED) {
-                <app-button label="Request Return" size="sm" variant="outline" (onClick)="requestReturn(item.bookId)" />
+              @if (!item.returned) {
+                <app-button label="Request Return" size="sm" variant="outline" (onClick)="requestReturn(item.id)" [loading]="returningId() === item.id" />
               }
             </div>
           </div>
@@ -80,38 +67,35 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
     .borrowed-list { display: flex; flex-direction: column; gap: 12px; }
     .borrowed-card { display: flex; align-items: center; gap: 16px; padding: 20px; background: #232527; border-radius: 12px; border: 1px solid rgba(255,255,255,0.04); transition: all 200ms ease; flex-wrap: wrap; }
     .borrowed-card:hover { background: #2A2C2E; }
-    .borrowed-cover { width: 48px; height: 64px; border-radius: 6px; background: #181A1B; display: flex; align-items: center; justify-content: center; color: #3A3C3E; flex-shrink: 0; overflow: hidden; }
-    .borrowed-cover img { width: 100%; height: 100%; object-fit: cover; }
     .borrowed-info { flex: 1; min-width: 200px; }
     .borrowed-info h4 { font-size: 0.9rem; font-weight: 600; color: #F5F1E8; margin: 0 0 2px; }
-    .borrowed-info p { font-size: 0.8rem; color: #5C5750; margin: 0 0 6px; }
-    .borrowed-owner { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #8A847C; }
+    .borrowed-info p { font-size: 0.8rem; color: #5C5750; margin: 0; }
     .borrowed-status { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-    .borrowed-date { font-size: 0.75rem; color: #5C5750; }
     .borrowed-action { flex-shrink: 0; }`
 })
 export class BorrowedBooksComponent implements OnInit {
   private borrowingService = inject(BorrowingService);
-  readonly BorrowStatus = BorrowStatus;
   readonly borrowedBooks = signal<BorrowedBook[]>([]);
   readonly loading = signal(true);
+  readonly returningId = signal<number | null>(null);
 
   ngOnInit(): void {
-    this.borrowingService.getBorrowedBooks().subscribe(b => {
+    this.borrowingService.getBorrowedBooksAsList().subscribe(b => {
       this.borrowedBooks.set(b);
       this.loading.set(false);
     });
   }
 
   requestReturn(bookId: number): void {
-    this.borrowingService.requestReturn(bookId).subscribe(updated => {
+    this.returningId.set(bookId);
+    this.borrowingService.requestReturn(bookId).subscribe(() => {
       this.borrowedBooks.update(list =>
-        list.map(b => b.bookId === bookId ? { ...b, status: BorrowStatus.RETURN_REQUESTED } : b)
+        list.map(b => b.id === bookId ? { ...b, returned: true } : b)
       );
+      this.returningId.set(null);
     });
   }
 
   navigateBrowse(): void {
-    // Router navigation handled in the component
   }
 }

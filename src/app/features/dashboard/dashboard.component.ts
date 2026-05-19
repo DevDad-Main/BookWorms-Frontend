@@ -1,23 +1,19 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DatePipe } from '@angular/common';
 import { BookService } from '../../core/services/book.service';
 import { BorrowingService } from '../../core/services/borrowing.service';
-import { UserService } from '../../core/services/user.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Book } from '../../core/models/book.model';
-import { BorrowedBook, BorrowingStats } from '../../core/models/borrowing.model';
-import { UserProfile } from '../../core/models/user.model';
+import { BorrowedBook } from '../../core/models/borrowing.model';
 import { StatsCardComponent } from '../../shared/components/stats-card/stats-card.component';
 import { BookCardComponent } from '../../shared/components/book-card/book-card.component';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
-import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, DatePipe, StatsCardComponent, BookCardComponent, IconComponent, SkeletonComponent, StatusBadgeComponent],
+  imports: [RouterLink, StatsCardComponent, BookCardComponent, IconComponent, SkeletonComponent],
   template: `<div class="page-enter">
     <div class="page-header">
       <div>
@@ -39,10 +35,10 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
           </div>
         }
       } @else {
-        <app-stats-card icon="books" [value]="userProfile()?.totalBooks ?? 0" label="Total Books" />
-        <app-stats-card icon="bookmark" [value]="userProfile()?.sharedBooks ?? 0" label="Shared Books" />
-        <app-stats-card icon="book-open" [value]="borrowingStats()?.totalBorrowed ?? 0" label="Borrowed" />
-        <app-stats-card icon="swap" [value]="borrowingStats()?.activeBorrows ?? 0" label="Active Borrows" />
+        <app-stats-card icon="books" [value]="totalBooks()" label="Total Books" />
+        <app-stats-card icon="bookmark" [value]="sharedBooks()" label="Shared Books" />
+        <app-stats-card icon="book-open" [value]="borrowedCount()" label="Borrowed" />
+        <app-stats-card icon="swap" [value]="activeBorrows()" label="Active Borrows" />
       }
     </div>
 
@@ -102,17 +98,15 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
             @for (item of recentActivity(); track item.id) {
               <div class="activity-item">
                 <div class="activity-icon">
-                  <app-icon [name]="item.status === 'PENDING' ? 'clock' : item.status === 'RETURNED' ? 'check' : 'swap'" size="16" />
+                  <app-icon name="swap" size="16" />
                 </div>
                 <div class="activity-info">
                   <p class="activity-text">
-                    <strong>{{ item.borrowerName }}</strong>
-                    {{ item.status === 'PENDING' ? 'requested' : item.status === 'RETURNED' ? 'returned' : 'borrowed' }}
-                    <strong>{{ item.bookTitle }}</strong>
+                    <strong>{{ item.title }}</strong>
+                    <span>by {{ item.authorName }}</span>
                   </p>
-                  <span class="activity-time">{{ item.requestedAt | date: 'mediumDate' }}</span>
+                  <span class="activity-time">{{ item.returnApproved ? 'Returned' : item.returned ? 'Return requested' : 'Currently borrowed' }}</span>
                 </div>
-                <app-status-badge [status]="item.status" />
               </div>
             } @empty {
               <div class="empty-mini">
@@ -173,6 +167,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
     .activity-info { flex: 1; min-width: 0; }
     .activity-text { font-size: 0.85rem; color: #8A847C; margin: 0; }
     .activity-text strong { color: #B8B2A8; font-weight: 500; }
+    .activity-text span { color: #5C5750; }
     .activity-time { font-size: 0.75rem; color: #5C5750; }
     .empty-mini { grid-column: 1 / -1; padding: 40px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: #5C5750; font-size: 0.9rem; text-align: center; }
 
@@ -187,51 +182,50 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge/statu
 export class DashboardComponent implements OnInit {
   private bookService = inject(BookService);
   private borrowingService = inject(BorrowingService);
-  private userService = inject(UserService);
   private authService = inject(AuthService);
 
   readonly loading = signal(true);
   readonly recentBooks = signal<Book[]>([]);
   readonly trendingBooks = signal<Book[]>([]);
   readonly recentActivity = signal<BorrowedBook[]>([]);
-  readonly userProfile = signal<UserProfile | null>(null);
-  readonly borrowingStats = signal<BorrowingStats | null>(null);
+  readonly totalBooks = signal(0);
+  readonly sharedBooks = signal(0);
+  readonly borrowedCount = signal(0);
+  readonly activeBorrows = signal(0);
 
   userName = signal('Reader');
 
   ngOnInit(): void {
     const user = this.authService.currentUser();
     if (user) {
-      this.userName.set(user.firstName);
+      this.userName.set(user.email.split('@')[0] || 'Reader');
     }
 
-    this.userService.getProfile().subscribe(profile => {
-      this.userProfile.set(profile);
+    this.bookService.getAllBooksAsList({ size: 20 }).subscribe(books => {
+      this.recentBooks.set(books.slice(0, 6));
+      this.trendingBooks.set(books.slice(0, 4));
       this.checkLoading();
     });
 
-    this.bookService.getAllBooks({ shareable: true }).subscribe(books => {
-      this.recentBooks.set(books.slice(0, 6));
-      this.trendingBooks.set(books.slice(0, 4));
+    this.bookService.getOwnerBooksAsList({ size: 50 }).subscribe(books => {
+      this.totalBooks.set(books.length);
+      this.sharedBooks.set(books.filter(b => b.shareable).length);
     });
 
-    this.borrowingService.getBorrowedBooks().subscribe(borrowed => {
+    this.borrowingService.getBorrowedBooksAsList().subscribe(borrowed => {
+      this.borrowedCount.set(borrowed.length);
+      this.activeBorrows.set(borrowed.filter(b => !b.returned).length);
       this.recentActivity.set(borrowed.slice(0, 5));
-    });
-
-    this.borrowingService.getStats().subscribe(stats => {
-      this.borrowingStats.set(stats);
       this.checkLoading();
     });
   }
 
   private checkLoading(): void {
-    if (this.userProfile() && this.borrowingStats()) {
+    if (this.recentBooks().length > 0 || this.recentActivity().length > 0) {
       this.loading.set(false);
     }
   }
 
   navigateToBook(id: number): void {
-    // Navigation handled by router
   }
 }

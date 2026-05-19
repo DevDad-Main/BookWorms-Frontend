@@ -29,8 +29,8 @@ import { AvatarComponent } from '../avatar/avatar.component';
       <p class="book-author">{{ book().authorName }}</p>
       <div class="book-meta">
         <div class="book-owner">
-          <app-avatar size="sm" [name]="book().ownerName" />
-          <span class="owner-name">{{ book().ownerName }}</span>
+          <app-avatar size="sm" [name]="book().owner" />
+          <span class="owner-name">{{ book().owner }}</span>
         </div>
         <app-badge [variant]="book().shareable ? 'success' : 'default'">
           {{ book().shareable ? 'Available' : 'Personal' }}

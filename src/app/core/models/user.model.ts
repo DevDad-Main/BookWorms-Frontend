@@ -1,15 +1,6 @@
 export interface User {
-  id: number;
-  firstName: string;
-  lastName: string;
   email: string;
-  avatar?: string;
-  bio?: string;
-  role: UserRole;
-  accountLocked: boolean;
-  enabled: boolean;
-  createdDate: string;
-  lastModifiedDate?: string;
+  role: string;
 }
 
 export enum UserRole {
@@ -19,7 +10,6 @@ export enum UserRole {
 
 export interface AuthResponse {
   token: string;
-  user: User;
 }
 
 export interface LoginRequest {
@@ -32,18 +22,4 @@ export interface RegisterRequest {
   lastName: string;
   email: string;
   password: string;
-}
-
-export interface UserProfile {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  avatar?: string;
-  bio?: string;
-  totalBooks: number;
-  sharedBooks: number;
-  borrowedBooks: number;
-  lentBooks: number;
-  memberSince: string;
 }

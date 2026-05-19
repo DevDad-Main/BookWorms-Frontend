@@ -1,53 +1,52 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { API } from '../constants/api.constants';
 import { BorrowedBook, BorrowingStats } from '../models/borrowing.model';
+import { PageResponse } from '../models/page.model';
 
 @Injectable({ providedIn: 'root' })
 export class BorrowingService {
   private borrowedBooks = signal<BorrowedBook[]>([]);
-  private lentBooks = signal<BorrowedBook[]>([]);
   private loading = signal(false);
   private stats = signal<BorrowingStats | null>(null);
 
   readonly borrowedBooks$ = this.borrowedBooks.asReadonly();
-  readonly lentBooks$ = this.lentBooks.asReadonly();
   readonly loading$ = this.loading.asReadonly();
   readonly stats$ = this.stats.asReadonly();
 
   constructor(private http: HttpClient) {}
 
-  getBorrowedBooks(): Observable<BorrowedBook[]> {
-    return this.http.get<BorrowedBook[]>(`${API.BASE_URL}${API.BORROWING.BORROWED}`);
+  getBorrowedBooks(page = 0, size = 20): Observable<PageResponse<BorrowedBook>> {
+    return this.http.get<PageResponse<BorrowedBook>>(`${API.BASE_URL}${API.BOOKS.BORROWED}`, {
+      params: { page, size }
+    });
   }
 
-  getLentBooks(): Observable<BorrowedBook[]> {
-    return this.http.get<BorrowedBook[]>(`${API.BASE_URL}${API.BORROWING.LENT}`);
+  getBorrowedBooksAsList(page = 0, size = 20): Observable<BorrowedBook[]> {
+    return this.getBorrowedBooks(page, size).pipe(map(p => p.content));
   }
 
-  getPendingRequests(): Observable<BorrowedBook[]> {
-    return this.http.get<BorrowedBook[]>(`${API.BASE_URL}${API.BORROWING.REQUESTS}`);
+  getReturnedBooks(page = 0, size = 20): Observable<PageResponse<BorrowedBook>> {
+    return this.http.get<PageResponse<BorrowedBook>>(`${API.BASE_URL}${API.BOOKS.RETURNED}`, {
+      params: { page, size }
+    });
   }
 
-  requestBorrow(bookId: number): Observable<BorrowedBook> {
-    return this.http.post<BorrowedBook>(`${API.BASE_URL}${API.BOOKS.BORROW(bookId)}`, {});
+  getReturnedBooksAsList(page = 0, size = 20): Observable<BorrowedBook[]> {
+    return this.getReturnedBooks(page, size).pipe(map(p => p.content));
   }
 
-  approveRequest(borrowingId: number): Observable<BorrowedBook> {
-    return this.http.patch<BorrowedBook>(`${API.BASE_URL}${API.BORROWING.APPROVE(borrowingId)}`, {});
+  requestBorrow(bookId: number): Observable<number> {
+    return this.http.post<number>(`${API.BASE_URL}${API.BOOKS.BORROW(bookId)}`, {});
   }
 
-  rejectRequest(borrowingId: number): Observable<BorrowedBook> {
-    return this.http.patch<BorrowedBook>(`${API.BASE_URL}${API.BORROWING.REJECT(borrowingId)}`, {});
+  requestReturn(bookId: number): Observable<number> {
+    return this.http.patch<number>(`${API.BASE_URL}${API.BOOKS.RETURN(bookId)}`, {});
   }
 
-  requestReturn(bookId: number): Observable<BorrowedBook> {
-    return this.http.post<BorrowedBook>(`${API.BASE_URL}${API.BOOKS.RETURN(bookId)}`, {});
-  }
-
-  approveReturn(borrowingId: number): Observable<BorrowedBook> {
-    return this.http.patch<BorrowedBook>(`${API.BASE_URL}${API.BORROWING.APPROVE_RETURN(borrowingId)}`, {});
+  approveReturn(bookId: number): Observable<number> {
+    return this.http.patch<number>(`${API.BASE_URL}${API.BOOKS.APPROVE_RETURN(bookId)}`, {});
   }
 
   getStats(): Observable<BorrowingStats> {

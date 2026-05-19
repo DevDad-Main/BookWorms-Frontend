@@ -8,7 +8,6 @@ import { Router } from '@angular/router';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly TOKEN_KEY = 'auth_token';
-  private readonly USER_KEY = 'auth_user';
 
   currentUser = signal<User | null>(null);
   isAuthenticated = signal(false);
@@ -36,7 +35,6 @@ export class AuthService {
 
   logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.USER_KEY);
     this.currentUser.set(null);
     this.isAuthenticated.set(false);
     this.router.navigate(['/login']);
@@ -49,24 +47,48 @@ export class AuthService {
     return null;
   }
 
+  getEmailFromToken(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = token.split('.')[1];
+      const decoded = JSON.parse(atob(payload));
+      return decoded.sub || null;
+    } catch {
+      return null;
+    }
+  }
+
   private handleAuthResponse(response: AuthResponse): void {
     localStorage.setItem(this.TOKEN_KEY, response.token);
-    localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
-    this.currentUser.set(response.user);
-    this.isAuthenticated.set(true);
+    const user = this.decodeToken(response.token);
+    if (user) {
+      this.currentUser.set(user);
+      this.isAuthenticated.set(true);
+    }
+  }
+
+  private decodeToken(token: string): User | null {
+    try {
+      const payload = token.split('.')[1];
+      const decoded = JSON.parse(atob(payload));
+      return {
+        email: decoded.sub || '',
+        role: decoded.authorities?.[0] || 'USER',
+      };
+    } catch {
+      return null;
+    }
   }
 
   private loadStoredUser(): void {
     const token = this.getToken();
     if (token) {
-      try {
-        const stored = localStorage.getItem(this.USER_KEY);
-        if (stored) {
-          const user = JSON.parse(stored) as User;
-          this.currentUser.set(user);
-          this.isAuthenticated.set(true);
-        }
-      } catch {
+      const user = this.decodeToken(token);
+      if (user) {
+        this.currentUser.set(user);
+        this.isAuthenticated.set(true);
+      } else {
         this.logout();
       }
     }

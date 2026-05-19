@@ -37,7 +37,7 @@ import { DropdownComponent, DropdownItem } from '../../shared/components/dropdow
         </div>
         <div class="nav-section">
           <span class="nav-section-label">Borrowing</span>
-          <app-nav-item route="/borrowing/requests" icon="swap" label="Requests" [badge]="pendingCount()" />
+          <app-nav-item route="/borrowing/requests" icon="swap" label="Requests" />
           <app-nav-item route="/borrowing/borrowed" icon="book-open" label="Borrowed" />
           <app-nav-item route="/borrowing/return" icon="refresh" label="Returns" />
         </div>
@@ -116,7 +116,7 @@ export class MainLayoutComponent {
 
   get userName(): string {
     const user = this.authService.currentUser();
-    return user ? `${user.firstName} ${user.lastName}` : 'User';
+    return user ? user.email.split('@')[0] : 'User';
   }
 
   readonly userMenuItems: DropdownItem[] = [

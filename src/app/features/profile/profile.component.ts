@@ -1,8 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { UserService } from '../../core/services/user.service';
 import { AuthService } from '../../core/services/auth.service';
-import { UserProfile } from '../../core/models/user.model';
 import { Book } from '../../core/models/book.model';
 import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 import { StatsCardComponent } from '../../shared/components/stats-card/stats-card.component';
@@ -14,7 +12,7 @@ import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.com
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [DatePipe, AvatarComponent, StatsCardComponent, BookCardComponent, IconComponent, ButtonComponent, SkeletonComponent],
+  imports: [AvatarComponent, StatsCardComponent, BookCardComponent, IconComponent, ButtonComponent, SkeletonComponent],
   template: `<div class="page-enter">
     @if (loading()) {
       <div class="profile-skeleton">
@@ -23,7 +21,6 @@ import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.com
           <div style="flex: 1;">
             <app-skeleton width="200px" height="28px" />
             <app-skeleton width="150px" height="16px" />
-            <app-skeleton width="300px" height="14px" />
           </div>
         </div>
         <div class="stats-grid">
@@ -32,29 +29,22 @@ import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.com
           }
         </div>
       </div>
-    } @else if (profile(); as p) {
+    } @else {
       <div class="profile-header">
         <div class="profile-main">
-          <app-avatar [name]="p.firstName + ' ' + p.lastName" size="xl" />
+          <app-avatar [name]="userName()" size="xl" />
           <div class="profile-info">
-            <h1>{{ p.firstName }} {{ p.lastName }}</h1>
-            <span class="profile-email">{{ p.email }}</span>
-            @if (p.bio) {
-              <p class="profile-bio">{{ p.bio }}</p>
-            }
-            <span class="profile-member">Member since {{ p.memberSince | date: 'yyyy' }}</span>
+            <h1>{{ userName() }}</h1>
+            <span class="profile-email">{{ userEmail() }}</span>
           </div>
-        </div>
-        <div class="profile-actions">
-          <app-button label="Edit Profile" icon="edit" variant="secondary" size="sm" />
         </div>
       </div>
 
       <div class="stats-grid">
-        <app-stats-card icon="books" [value]="p.totalBooks" label="Total Books" />
-        <app-stats-card icon="bookmark" [value]="p.sharedBooks" label="Shared" />
-        <app-stats-card icon="book-open" [value]="p.borrowedBooks" label="Borrowed" />
-        <app-stats-card icon="swap" [value]="p.lentBooks" label="Lent Out" />
+        <app-stats-card icon="books" [value]="totalBooks()" label="Total Books" />
+        <app-stats-card icon="bookmark" [value]="sharedBooks()" label="Shared" />
+        <app-stats-card icon="book-open" [value]="borrowedBooks()" label="Borrowed" />
+        <app-stats-card icon="swap" [value]="lentBooks()" label="Lent Out" />
       </div>
 
       <div class="profile-section">
@@ -80,8 +70,6 @@ import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.com
     .profile-main { display: flex; align-items: flex-start; gap: 24px; }
     .profile-info h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 2rem; font-weight: 600; color: #F5F1E8; margin-bottom: 4px; }
     .profile-email { display: block; font-size: 0.9rem; color: #5C5750; margin-bottom: 8px; }
-    .profile-bio { font-size: 0.9rem; color: #8A847C; line-height: 1.6; margin-bottom: 8px; max-width: 480px; }
-    .profile-member { font-size: 0.8rem; color: #5C5750; }
     .profile-actions { flex-shrink: 0; }
     .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
     .profile-section { }
@@ -103,21 +91,28 @@ export class ProfileComponent implements OnInit {
   private userService = inject(UserService);
   private authService = inject(AuthService);
 
-  readonly profile = signal<UserProfile | null>(null);
   readonly userBooks = signal<Book[]>([]);
   readonly loading = signal(true);
+  readonly totalBooks = signal(0);
+  readonly sharedBooks = signal(0);
+  readonly borrowedBooks = signal(0);
+  readonly lentBooks = signal(0);
+
+  userName = signal('');
+  userEmail = signal('');
 
   ngOnInit(): void {
     const user = this.authService.currentUser();
-    if (!user) return;
+    if (user) {
+      this.userName.set(user.email.split('@')[0] || 'User');
+      this.userEmail.set(user.email);
+    }
 
-    this.userService.getProfile().subscribe(p => {
-      this.profile.set(p);
-      this.loading.set(false);
-    });
-
-    this.userService.getUserBooks(user.id).subscribe(books => {
+    this.userService.getUserBooks().subscribe(books => {
       this.userBooks.set(books);
+      this.totalBooks.set(books.length);
+      this.sharedBooks.set(books.filter(b => b.shareable).length);
+      this.loading.set(false);
     });
   }
 }

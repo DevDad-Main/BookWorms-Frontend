@@ -1,9 +1,7 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { DatePipe } from '@angular/common';
 import { BookService } from '../../../core/services/book.service';
 import { BorrowingService } from '../../../core/services/borrowing.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { Book } from '../../../core/models/book.model';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
@@ -14,7 +12,7 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
 @Component({
   selector: 'app-book-detail',
   standalone: true,
-  imports: [RouterLink, DatePipe, ButtonComponent, BadgeComponent, IconComponent, SkeletonComponent, AvatarComponent],
+  imports: [RouterLink, ButtonComponent, BadgeComponent, IconComponent, SkeletonComponent, AvatarComponent],
   template: `<div class="page-enter">
     @if (loading()) {
       <div class="detail-skeleton">
@@ -50,7 +48,6 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
               <app-button label="Request to Borrow" icon="swap" size="lg" (onClick)="requestBorrow(b.id)" [loading]="borrowing()" />
             }
             @if (isOwner) {
-              <app-button label="Edit Book" icon="edit" variant="secondary" size="md" (onClick)="editBook(b.id)" />
               <app-button
                 [label]="b.shareable ? 'Unshare' : 'Share'"
                 [icon]="b.shareable ? 'x' : 'share'"
@@ -99,18 +96,11 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
           <div class="book-owner-section">
             <h3>Owner</h3>
             <div class="owner-profile">
-              <app-avatar [name]="b.ownerName" size="lg" />
+              <app-avatar [name]="b.owner" size="lg" />
               <div>
-                <span class="owner-name-lg">{{ b.ownerName }}</span>
+                <span class="owner-name-lg">{{ b.owner }}</span>
                 <span class="owner-label">Book owner</span>
               </div>
-            </div>
-          </div>
-
-          <div class="book-meta-footer">
-            <div class="meta-stat">
-              <app-icon name="calendar" size="16" />
-              <span>Added {{ b.createdAt | date: 'mediumDate' }}</span>
             </div>
           </div>
         </div>
@@ -138,8 +128,6 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
     .owner-profile { display: flex; align-items: center; gap: 12px; }
     .owner-name-lg { display: block; font-size: 0.95rem; font-weight: 500; color: #F5F1E8; }
     .owner-label { font-size: 0.8rem; color: #5C5750; }
-    .book-meta-footer { display: flex; gap: 16px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.04); }
-    .meta-stat { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #5C5750; }
 
     @media (max-width: 768px) {
       .book-detail { grid-template-columns: 1fr; gap: 24px; }
@@ -152,11 +140,15 @@ export class BookDetailComponent implements OnInit {
   private router = inject(Router);
   private bookService = inject(BookService);
   private borrowingService = inject(BorrowingService);
-  private authService = inject(AuthService);
 
   readonly book = signal<Book | null>(null);
+  readonly ownerBookIds = signal<Set<number>>(new Set());
   readonly loading = signal(true);
   readonly borrowing = signal(false);
+  readonly isOwner = computed(() => {
+    const b = this.book();
+    return b !== null && this.ownerBookIds().has(b.id);
+  });
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -165,12 +157,10 @@ export class BookDetailComponent implements OnInit {
         this.book.set(b);
         this.loading.set(false);
       });
+      this.bookService.getOwnerBooksAsList({ size: 100 }).subscribe(books => {
+        this.ownerBookIds.set(new Set(books.map(b => b.id)));
+      });
     }
-  }
-
-  get isOwner(): boolean {
-    const user = this.authService.currentUser();
-    return user !== null && this.book()?.ownerId === user.id;
   }
 
   requestBorrow(bookId: number): void {
@@ -184,15 +174,15 @@ export class BookDetailComponent implements OnInit {
     });
   }
 
-  editBook(id: number): void {
-    this.router.navigate(['/books', id, 'edit']);
-  }
-
   toggleShare(id: number): void {
-    this.bookService.shareBook(id).subscribe(b => this.book.set(b));
+    this.bookService.shareBook(id).subscribe(() => {
+      this.bookService.getBookById(id).subscribe(b => this.book.set(b));
+    });
   }
 
   toggleArchive(id: number): void {
-    this.bookService.archiveBook(id).subscribe(b => this.book.set(b));
+    this.bookService.archiveBook(id).subscribe(() => {
+      this.bookService.getBookById(id).subscribe(b => this.book.set(b));
+    });
   }
 }

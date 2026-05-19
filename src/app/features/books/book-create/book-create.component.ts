@@ -120,11 +120,11 @@ export class BookCreateComponent {
     this.bookService.createBook({
       title: this.title.trim(),
       authorName: this.author.trim(),
-      isbn: this.isbn.trim() || undefined,
-      synopsis: this.synopsis.trim() || undefined,
+      isbn: this.isbn.trim() || 'N/A',
+      synopsis: this.synopsis.trim() || 'No synopsis provided.',
       shareable: this.shareable
     }).subscribe({
-      next: (book) => this.router.navigate(['/books', book.id]),
+      next: (bookId) => this.router.navigate(['/books', bookId]),
       error: (err) => {
         this.loading.set(false);
         this.errors.set({ general: err.error?.error || 'Failed to create book.' });
