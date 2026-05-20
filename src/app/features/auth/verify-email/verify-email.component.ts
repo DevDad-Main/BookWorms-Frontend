@@ -51,7 +51,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
         </div>
         <h2>Check your email</h2>
         <p>We've sent a verification code to <strong>{{ email() }}</strong></p>
-        <p class="hint">Enter the code below to activate your account.</p>
+        <p class="hint">Enter the code below, or click the link in the email to activate your account.</p>
 
         <div class="code-form">
           <app-input
