@@ -18,6 +18,7 @@ export interface BookRequest {
   isbn: string;
   synopsis: string;
   shareable: boolean;
+  archived: boolean;
 }
 
 export interface BookFilters {

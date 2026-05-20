@@ -1,19 +1,22 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { BookService } from '../../core/services/book.service';
 import { BorrowingService } from '../../core/services/borrowing.service';
 import { AuthService } from '../../core/services/auth.service';
+import { SeedService, SeedProgress } from '../../core/services/seed.service';
 import { Book } from '../../core/models/book.model';
 import { BorrowedBook } from '../../core/models/borrowing.model';
 import { StatsCardComponent } from '../../shared/components/stats-card/stats-card.component';
 import { BookCardComponent } from '../../shared/components/book-card/book-card.component';
+import { ButtonComponent } from '../../shared/components/button/button.component';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, StatsCardComponent, BookCardComponent, IconComponent, SkeletonComponent],
+  imports: [RouterLink, StatsCardComponent, BookCardComponent, ButtonComponent, IconComponent, SkeletonComponent],
   template: `<div class="page-enter">
     <div class="page-header">
       <div>
@@ -39,6 +42,30 @@ import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.com
         <app-stats-card icon="bookmark" [value]="sharedBooks()" label="Shared Books" />
         <app-stats-card icon="book-open" [value]="borrowedCount()" label="Borrowed" />
         <app-stats-card icon="swap" [value]="activeBorrows()" label="Active Borrows" />
+      }
+    </div>
+
+    <!-- Seed Data -->
+    <div class="seed-card">
+      <div class="seed-header">
+        <div>
+          <h3>Developer Tools</h3>
+          <p>Seed 24 classic books to your library.</p>
+        </div>
+        @if (!seedProgress()?.done) {
+          <app-button label="Seed Books" icon="plus" variant="outline" size="sm" [loading]="seeding()" (onClick)="startSeed()" />
+        }
+      </div>
+      @if (seedProgress(); as p) {
+        <div class="seed-progress">
+          <div class="seed-bar-bg">
+            <div class="seed-bar-fill" [style.width.%]="(p.current / p.total) * 100"></div>
+          </div>
+          <span class="seed-label">{{ p.current }}/{{ p.total }} @if (!p.done && p.title) { &mdash; {{ p.title }} } @if (p.done) { &mdash; Done }</span>
+        </div>
+        @if (p.error) {
+          <div class="seed-error">{{ p.error }}</div>
+        }
       }
     </div>
 
@@ -171,6 +198,16 @@ import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.com
     .activity-time { font-size: 0.75rem; color: #5C5750; }
     .empty-mini { grid-column: 1 / -1; padding: 40px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: #5C5750; font-size: 0.9rem; text-align: center; }
 
+    .seed-card { padding: 20px; background: #1E2022; border: 1px solid rgba(198, 169, 114, 0.12); border-radius: 12px; margin-bottom: 32px; }
+    .seed-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .seed-header h3 { font-size: 0.9rem; font-weight: 600; color: #C6A972; margin: 0 0 2px; }
+    .seed-header p { font-size: 0.8rem; color: #5C5750; margin: 0; }
+    .seed-progress { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+    .seed-bar-bg { flex: 1; height: 6px; background: #2A2C2E; border-radius: 3px; overflow: hidden; }
+    .seed-bar-fill { height: 100%; background: #C6A972; border-radius: 3px; transition: width 300ms ease; }
+    .seed-label { font-size: 0.8rem; color: #8A847C; white-space: nowrap; }
+    .seed-error { margin-top: 8px; font-size: 0.8rem; color: #B85C5C; }
+
     @media (max-width: 992px) {
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
       .dashboard-grid { grid-template-columns: 1fr; }
@@ -179,12 +216,16 @@ import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.com
       .stats-grid { grid-template-columns: 1fr; }
     }`
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   private bookService = inject(BookService);
   private borrowingService = inject(BorrowingService);
   private authService = inject(AuthService);
+  private seedService = inject(SeedService);
 
   readonly loading = signal(true);
+  readonly seeding = signal(false);
+  readonly seedProgress = signal<SeedProgress | null>(null);
+  private seedSub?: Subscription;
   readonly recentBooks = signal<Book[]>([]);
   readonly trendingBooks = signal<Book[]>([]);
   readonly recentActivity = signal<BorrowedBook[]>([]);
@@ -224,6 +265,34 @@ export class DashboardComponent implements OnInit {
     if (this.recentBooks().length > 0 || this.recentActivity().length > 0) {
       this.loading.set(false);
     }
+  }
+
+  startSeed(): void {
+    this.seeding.set(true);
+    this.seedProgress.set({ current: 0, total: 24, title: '', done: false });
+    this.seedSub = this.seedService.seedBooks().subscribe({
+      next: (p) => this.seedProgress.set(p),
+      error: () => this.seeding.set(false),
+      complete: () => {
+        this.seeding.set(false);
+        this.loadBooks();
+      }
+    });
+  }
+
+  private loadBooks(): void {
+    this.bookService.getAllBooksAsList({ size: 20 }).subscribe(books => {
+      this.recentBooks.set(books.slice(0, 6));
+      this.trendingBooks.set(books.slice(0, 4));
+    });
+    this.bookService.getOwnerBooksAsList({ size: 50 }).subscribe(books => {
+      this.totalBooks.set(books.length);
+      this.sharedBooks.set(books.filter(b => b.shareable).length);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.seedSub?.unsubscribe();
   }
 
   navigateToBook(id: number): void {

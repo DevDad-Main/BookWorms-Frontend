@@ -122,7 +122,8 @@ export class BookCreateComponent {
       authorName: this.author.trim(),
       isbn: this.isbn.trim() || 'N/A',
       synopsis: this.synopsis.trim() || 'No synopsis provided.',
-      shareable: this.shareable
+      shareable: this.shareable,
+      archived: false
     }).subscribe({
       next: (bookId) => this.router.navigate(['/books', bookId]),
       error: () => this.loading.set(false)

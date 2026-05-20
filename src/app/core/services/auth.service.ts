@@ -81,9 +81,24 @@ export class AuthService {
     }
   }
 
+  private isTokenExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const exp = payload.exp as number | undefined;
+      if (!exp) return false;
+      return Date.now() >= exp * 1000;
+    } catch {
+      return true;
+    }
+  }
+
   private loadStoredUser(): void {
     const token = this.getToken();
     if (token) {
+      if (this.isTokenExpired(token)) {
+        this.logout();
+        return;
+      }
       const user = this.decodeToken(token);
       if (user) {
         this.currentUser.set(user);
