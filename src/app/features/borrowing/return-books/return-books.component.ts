@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, computed, signal } from '@angular/core';
 import { BorrowingService } from '../../../core/services/borrowing.service';
 import { BorrowedBook } from '../../../core/models/borrowing.model';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
@@ -88,25 +88,21 @@ export class ReturnBooksComponent implements OnInit {
   readonly loading = signal(true);
   readonly activeTab = signal<'pending' | 'returned'>('pending');
   readonly confirmingId = signal<number | null>(null);
-  readonly filteredItems = signal<BorrowedBook[]>([]);
+  readonly filteredItems = computed(() => {
+    if (this.activeTab() === 'pending') {
+      return this.items().filter(b => b.returned && !b.returnApproved);
+    }
+    return this.items().filter(b => b.returnApproved);
+  });
 
   ngOnInit(): void {
     this.borrowingService.getReturnedBooksAsList().subscribe({
       next: (b) => {
         this.items.set(b);
-        this.filterItems();
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
     });
-  }
-
-  filterItems(): void {
-    if (this.activeTab() === 'pending') {
-      this.filteredItems.set(this.items().filter(b => b.returned && !b.returnApproved));
-    } else {
-      this.filteredItems.set(this.items().filter(b => b.returnApproved));
-    }
   }
 
   confirmReturn(bookId: number): void {
@@ -116,7 +112,6 @@ export class ReturnBooksComponent implements OnInit {
         this.items.update(list =>
           list.map(b => b.id === bookId ? { ...b, returnApproved: true } : b)
         );
-        this.filterItems();
         this.confirmingId.set(null);
       },
       error: () => this.confirmingId.set(null)
