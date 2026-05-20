@@ -243,12 +243,22 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
 
     let dataLoaded = 0;
-    const tryDone = () => { if (++dataLoaded >= 3) this.loading.set(false); };
+    let borrowedBooks: BorrowedBook[] = [];
+    let returnedBooks: BorrowedBook[] = [];
+    const tryDone = () => { if (++dataLoaded >= 4) this.loading.set(false); };
+    const markBorrowed = () => {
+      const allBorrowedIds = new Set<number>();
+      borrowedBooks.filter(b => !b.returned).forEach(b => allBorrowedIds.add(b.id));
+      returnedBooks.filter(b => !b.returned && !b.returnApproved).forEach(b => allBorrowedIds.add(b.id));
+      this.recentBooks.update(books => books.map(b => ({ ...b, borrowed: allBorrowedIds.has(b.id) })));
+      this.trendingBooks.update(books => books.map(b => ({ ...b, borrowed: allBorrowedIds.has(b.id) })));
+    };
 
     this.bookService.getAllBooksAsList({ size: 20 }).subscribe({
       next: (books) => {
         this.recentBooks.set(books.slice(0, 6));
         this.trendingBooks.set(books.slice(0, 4));
+        markBorrowed();
         tryDone();
       },
       error: () => tryDone()
@@ -265,9 +275,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.borrowingService.getBorrowedBooksAsList().subscribe({
       next: (borrowed) => {
+        borrowedBooks = borrowed;
         this.borrowedCount.set(borrowed.length);
         this.activeBorrows.set(borrowed.filter(b => !b.returned).length);
         this.recentActivity.set(borrowed.slice(0, 5));
+        markBorrowed();
+        tryDone();
+      },
+      error: () => tryDone()
+    });
+
+    this.borrowingService.getReturnedBooksAsList().subscribe({
+      next: (returned) => {
+        returnedBooks = returned;
+        markBorrowed();
         tryDone();
       },
       error: () => tryDone()

@@ -46,7 +46,7 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
 
           <div class="cover-actions">
             @if (b.shareable && !isOwner()) {
-              <app-button label="Request to Borrow" icon="swap" size="lg" (onClick)="requestBorrow(b.id)" [loading]="borrowing()" />
+              <app-button [label]="borrowed() ? 'Currently Being Borrowed' : 'Request to Borrow'" [icon]="borrowed() ? 'book' : 'swap'" size="lg" (onClick)="requestBorrow(b.id)" [loading]="borrowing()" [disabled]="borrowed()" [variant]="borrowed() ? 'secondary' : 'primary'" />
             }
             @if (isOwner()) {
               <app-button
@@ -147,6 +147,7 @@ export class BookDetailComponent implements OnInit {
   readonly ownerBookIds = signal<Set<number>>(new Set());
   readonly loading = signal(true);
   readonly borrowing = signal(false);
+  readonly borrowed = signal(false);
   readonly isOwner = computed(() => {
     const b = this.book();
     return b !== null && this.ownerBookIds().has(b.id);
@@ -166,6 +167,10 @@ export class BookDetailComponent implements OnInit {
         next: (books) => this.ownerBookIds.set(new Set(books.map(b => b.id))),
         error: () => {}
       });
+      this.borrowingService.getBorrowedBooksAsList().subscribe({
+        next: (borrowed) => this.borrowed.set(borrowed.some(b => b.id === id && !b.returned)),
+        error: () => {}
+      });
     }
   }
 
@@ -176,7 +181,10 @@ export class BookDetailComponent implements OnInit {
         this.borrowing.set(false);
         this.router.navigate(['/borrowing/borrowed']);
       },
-      error: () => this.borrowing.set(false)
+      error: () => {
+        this.borrowing.set(false);
+        this.borrowed.set(true);
+      }
     });
   }
 

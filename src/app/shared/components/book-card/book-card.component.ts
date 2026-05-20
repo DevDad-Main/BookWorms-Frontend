@@ -33,8 +33,8 @@ import { AvatarComponent } from '../avatar/avatar.component';
           <app-avatar size="sm" [name]="book().owner" />
           <span class="owner-name">{{ book().owner }}</span>
         </div>
-        <app-badge [variant]="book().shareable ? 'success' : 'default'">
-          {{ book().shareable ? 'Available' : 'Personal' }}
+        <app-badge [variant]="book().borrowed ? 'warning' : book().shareable ? 'success' : 'default'">
+          {{ book().borrowed ? 'Borrowed' : book().shareable ? 'Available' : 'Personal' }}
         </app-badge>
       </div>
     </div>

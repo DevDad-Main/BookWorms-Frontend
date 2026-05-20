@@ -9,6 +9,7 @@ export interface Book {
   rate: number;
   archived: boolean;
   shareable: boolean;
+  borrowed?: boolean;
 }
 
 export interface BookRequest {

@@ -81,6 +81,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/books/book-edit/book-edit.component').then(m => m.BookEditComponent)
       },
       {
+        path: 'borrowing/lent',
+        loadComponent: () => import('./features/borrowing/currently-lent/currently-lent.component').then(m => m.CurrentlyLentComponent)
+      },
+      {
         path: 'borrowing/requests',
         loadComponent: () => import('./features/borrowing/borrow-requests/borrow-requests.component').then(m => m.BorrowRequestsComponent)
       },

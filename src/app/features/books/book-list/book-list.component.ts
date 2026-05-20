@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { BookService } from '../../../core/services/book.service';
+import { BorrowingService } from '../../../core/services/borrowing.service';
 import { Book } from '../../../core/models/book.model';
 import { BookCardComponent } from '../../../shared/components/book-card/book-card.component';
 import { SearchInputComponent } from '../../../shared/components/search-input/search-input.component';
@@ -78,8 +79,8 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
                 <span>{{ book.owner }}</span>
               </div>
               <div class="list-status">
-                <span class="status-dot" [class.available]="book.shareable"></span>
-                {{ book.shareable ? 'Available' : 'Personal' }}
+                <span class="status-dot" [class.available]="book.shareable && !book.borrowed" [class.borrowed]="book.borrowed"></span>
+                {{ book.borrowed ? 'Borrowed' : book.shareable ? 'Available' : 'Personal' }}
               </div>
             </div>
           }
@@ -107,6 +108,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
     .list-status { font-size: 0.85rem; color: #5C5750; display: flex; align-items: center; gap: 6px; min-width: 100px; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #5C5750; }
     .status-dot.available { background: #7CBB7A; }
+    .status-dot.borrowed { background: #D4A84B; }
 
     @media (max-width: 768px) {
       .page-header { flex-direction: column; }
@@ -115,6 +117,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 })
 export class BookListComponent implements OnInit {
   private bookService = inject(BookService);
+  private borrowingService = inject(BorrowingService);
   private router = inject(Router);
 
   readonly books = signal<Book[]>([]);
@@ -130,8 +133,17 @@ export class BookListComponent implements OnInit {
     this.loading.set(true);
     this.bookService.getAllBooksAsList({ size: 50 }).subscribe({
       next: (books) => {
-        this.books.set(books);
-        this.loading.set(false);
+        this.borrowingService.getBorrowedBooksAsList().subscribe({
+          next: (borrowed) => {
+            const borrowedIds = new Set(borrowed.map(b => b.id));
+            this.books.set(books.map(b => ({ ...b, borrowed: borrowedIds.has(b.id) })));
+            this.loading.set(false);
+          },
+          error: () => {
+            this.books.set(books);
+            this.loading.set(false);
+          }
+        });
       },
       error: () => this.loading.set(false)
     });
