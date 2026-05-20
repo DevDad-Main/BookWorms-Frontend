@@ -39,8 +39,9 @@ import { DropdownComponent, DropdownItem } from '../../shared/components/dropdow
           <span class="nav-section-label">Borrowing</span>
           <app-nav-item route="/borrowing/requests" icon="swap" label="Requests" />
           <app-nav-item route="/borrowing/borrowed" icon="book-open" label="Borrowed" />
-          <app-nav-item route="/borrowing/lent" icon="upload" label="Currently Lent" />
+          <app-nav-item route="/borrowing/lent" icon="upload" label="Lent" />
           <app-nav-item route="/borrowing/return" icon="refresh" label="Returns" />
+          <app-nav-item route="/borrowing/reviews" icon="star" label="Reviews" />
         </div>
       </nav>
     </aside>

@@ -106,6 +106,8 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
           </div>
         </div>
       </div>
+
+
     }
   </div>`,
   styles: `.back-link { display: inline-flex; align-items: center; gap: 6px; color: #8A847C; font-size: 0.85rem; margin-bottom: 24px; transition: color 200ms ease; &:hover { color: #C6A972; } }
