@@ -5,6 +5,21 @@ import { API } from '../constants/api.constants';
 import { Book, BookRequest, BookFilters } from '../models/book.model';
 import { PageResponse } from '../models/page.model';
 
+function detectMime(base64: string): string {
+  if (base64.startsWith('/9j/')) return 'image/jpeg';
+  if (base64.startsWith('iVBOR')) return 'image/png';
+  if (base64.startsWith('R0lG')) return 'image/gif';
+  if (base64.startsWith('UklGR')) return 'image/webp';
+  return 'image/jpeg';
+}
+
+function normalizeCover(book: Book): Book {
+  if (!book.cover) return book;
+  if (book.cover.startsWith('http://') || book.cover.startsWith('https://') || book.cover.startsWith('data:')) return book;
+  const mime = detectMime(book.cover);
+  return { ...book, cover: `data:${mime};base64,${book.cover}` };
+}
+
 @Injectable({ providedIn: 'root' })
 export class BookService {
   private books = signal<Book[]>([]);
@@ -22,7 +37,7 @@ export class BookService {
     const size = filters?.size ?? 20;
     return this.http.get<PageResponse<Book>>(`${API.BASE_URL}${API.BOOKS.BASE}`, {
       params: { page, size }
-    });
+    }).pipe(map(p => ({ ...p, content: p.content.map(normalizeCover) })));
   }
 
   getAllBooksAsList(filters?: BookFilters): Observable<Book[]> {
@@ -34,7 +49,7 @@ export class BookService {
     const size = filters?.size ?? 20;
     return this.http.get<PageResponse<Book>>(`${API.BASE_URL}${API.BOOKS.OWNER}`, {
       params: { page, size }
-    });
+    }).pipe(map(p => ({ ...p, content: p.content.map(normalizeCover) })));
   }
 
   getOwnerBooksAsList(filters?: BookFilters): Observable<Book[]> {
@@ -42,7 +57,7 @@ export class BookService {
   }
 
   getBookById(id: number): Observable<Book> {
-    return this.http.get<Book>(`${API.BASE_URL}${API.BOOKS.BY_ID(id)}`);
+    return this.http.get<Book>(`${API.BASE_URL}${API.BOOKS.BY_ID(id)}`).pipe(map(normalizeCover));
   }
 
   createBook(request: BookRequest): Observable<number> {

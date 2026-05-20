@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "dev": "ng serve",
-    "start": "ng serve",
+    "dev": "node --max-http-header-size=65536 node_modules/.bin/ng serve",
+    "start": "node --max-http-header-size=65536 node_modules/.bin/ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"

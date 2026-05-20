@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { BookService } from '../../../core/services/book.service';
 import { BorrowingService } from '../../../core/services/borrowing.service';
@@ -35,7 +36,7 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
         <div class="book-cover-section">
           <div class="detail-cover">
             @if (b.cover) {
-              <img [src]="b.cover" [alt]="b.title" />
+              <img [src]="safeCover(b)" [alt]="b.title" />
             } @else {
               <div class="cover-placeholder-lg">
                 <app-icon name="book" size="48" />
@@ -140,6 +141,7 @@ export class BookDetailComponent implements OnInit {
   private router = inject(Router);
   private bookService = inject(BookService);
   private borrowingService = inject(BorrowingService);
+  private sanitizer = inject(DomSanitizer);
 
   readonly book = signal<Book | null>(null);
   readonly ownerBookIds = signal<Set<number>>(new Set());
@@ -196,5 +198,10 @@ export class BookDetailComponent implements OnInit {
       }),
       error: () => {}
     });
+  }
+
+  safeCover(b: Book): import('@angular/platform-browser').SafeResourceUrl | null {
+    if (!b.cover) return null;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(b.cover);
   }
 }

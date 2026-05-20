@@ -1,4 +1,5 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, computed, inject } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 import { Book } from '../../../core/models/book.model';
 import { IconComponent } from '../icon/icon.component';
 import { BadgeComponent } from '../badge/badge.component';
@@ -11,7 +12,7 @@ import { AvatarComponent } from '../avatar/avatar.component';
   template: `<div class="book-card" (click)="onClick.emit()">
     <div class="book-cover">
       @if (book().cover) {
-        <img [src]="book().cover" [alt]="book().title" class="cover-img" />
+        <img [src]="coverUrl()" [alt]="book().title" class="cover-img" />
       } @else {
         <div class="cover-placeholder">
           <app-icon name="book" size="32" />
@@ -54,6 +55,13 @@ import { AvatarComponent } from '../avatar/avatar.component';
     .owner-name { font-size: 0.78rem; color: #8A847C; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }`
 })
 export class BookCardComponent {
+  private sanitizer = inject(DomSanitizer);
   readonly book = input.required<Book>();
   readonly onClick = output<void>();
+
+  readonly coverUrl = computed(() => {
+    const cover = this.book().cover;
+    if (!cover) return null;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(cover);
+  });
 }
