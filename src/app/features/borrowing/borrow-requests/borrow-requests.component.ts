@@ -62,9 +62,12 @@ export class BorrowRequestsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loading.set(true);
-    this.borrowingService.getReturnedBooksAsList().subscribe(r => {
-      this.requests.set(r.filter(b => b.returned && !b.returnApproved));
-      this.loading.set(false);
+    this.borrowingService.getReturnedBooksAsList().subscribe({
+      next: (r) => {
+        this.requests.set(r.filter(b => b.returned && !b.returnApproved));
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
     });
   }
 }

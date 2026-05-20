@@ -79,19 +79,25 @@ export class BorrowedBooksComponent implements OnInit {
   readonly returningId = signal<number | null>(null);
 
   ngOnInit(): void {
-    this.borrowingService.getBorrowedBooksAsList().subscribe(b => {
-      this.borrowedBooks.set(b);
-      this.loading.set(false);
+    this.borrowingService.getBorrowedBooksAsList().subscribe({
+      next: (b) => {
+        this.borrowedBooks.set(b);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
     });
   }
 
   requestReturn(bookId: number): void {
     this.returningId.set(bookId);
-    this.borrowingService.requestReturn(bookId).subscribe(() => {
-      this.borrowedBooks.update(list =>
-        list.map(b => b.id === bookId ? { ...b, returned: true } : b)
-      );
-      this.returningId.set(null);
+    this.borrowingService.requestReturn(bookId).subscribe({
+      next: () => {
+        this.borrowedBooks.update(list =>
+          list.map(b => b.id === bookId ? { ...b, returned: true } : b)
+        );
+        this.returningId.set(null);
+      },
+      error: () => this.returningId.set(null)
     });
   }
 

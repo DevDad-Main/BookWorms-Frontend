@@ -153,12 +153,16 @@ export class BookDetailComponent implements OnInit {
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (id) {
-      this.bookService.getBookById(id).subscribe(b => {
-        this.book.set(b);
-        this.loading.set(false);
+      this.bookService.getBookById(id).subscribe({
+        next: (b) => {
+          this.book.set(b);
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false)
       });
-      this.bookService.getOwnerBooksAsList({ size: 100 }).subscribe(books => {
-        this.ownerBookIds.set(new Set(books.map(b => b.id)));
+      this.bookService.getOwnerBooksAsList({ size: 100 }).subscribe({
+        next: (books) => this.ownerBookIds.set(new Set(books.map(b => b.id))),
+        error: () => {}
       });
     }
   }
@@ -175,14 +179,22 @@ export class BookDetailComponent implements OnInit {
   }
 
   toggleShare(id: number): void {
-    this.bookService.shareBook(id).subscribe(() => {
-      this.bookService.getBookById(id).subscribe(b => this.book.set(b));
+    this.bookService.shareBook(id).subscribe({
+      next: () => this.bookService.getBookById(id).subscribe({
+        next: (b) => this.book.set(b),
+        error: () => {}
+      }),
+      error: () => {}
     });
   }
 
   toggleArchive(id: number): void {
-    this.bookService.archiveBook(id).subscribe(() => {
-      this.bookService.getBookById(id).subscribe(b => this.book.set(b));
+    this.bookService.archiveBook(id).subscribe({
+      next: () => this.bookService.getBookById(id).subscribe({
+        next: (b) => this.book.set(b),
+        error: () => {}
+      }),
+      error: () => {}
     });
   }
 }

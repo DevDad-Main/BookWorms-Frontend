@@ -128,9 +128,12 @@ export class BookListComponent implements OnInit {
 
   loadBooks(): void {
     this.loading.set(true);
-    this.bookService.getAllBooksAsList({ size: 50 }).subscribe(books => {
-      this.books.set(books);
-      this.loading.set(false);
+    this.bookService.getAllBooksAsList({ size: 50 }).subscribe({
+      next: (books) => {
+        this.books.set(books);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
     });
   }
 

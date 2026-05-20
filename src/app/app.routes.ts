@@ -65,6 +65,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/books/book-list/book-list.component').then(m => m.BookListComponent)
       },
       {
+        path: 'books/my',
+        loadComponent: () => import('./features/books/my-books/my-books.component').then(m => m.MyBooksComponent)
+      },
+      {
         path: 'books/create',
         loadComponent: () => import('./features/books/book-create/book-create.component').then(m => m.BookCreateComponent)
       },

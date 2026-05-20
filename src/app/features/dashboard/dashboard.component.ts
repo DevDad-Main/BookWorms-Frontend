@@ -242,29 +242,36 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.userName.set(user.email.split('@')[0] || 'Reader');
     }
 
-    this.bookService.getAllBooksAsList({ size: 20 }).subscribe(books => {
-      this.recentBooks.set(books.slice(0, 6));
-      this.trendingBooks.set(books.slice(0, 4));
-      this.checkLoading();
+    let dataLoaded = 0;
+    const tryDone = () => { if (++dataLoaded >= 3) this.loading.set(false); };
+
+    this.bookService.getAllBooksAsList({ size: 20 }).subscribe({
+      next: (books) => {
+        this.recentBooks.set(books.slice(0, 6));
+        this.trendingBooks.set(books.slice(0, 4));
+        tryDone();
+      },
+      error: () => tryDone()
     });
 
-    this.bookService.getOwnerBooksAsList({ size: 50 }).subscribe(books => {
-      this.totalBooks.set(books.length);
-      this.sharedBooks.set(books.filter(b => b.shareable).length);
+    this.bookService.getOwnerBooksAsList({ size: 50 }).subscribe({
+      next: (books) => {
+        this.totalBooks.set(books.length);
+        this.sharedBooks.set(books.filter(b => b.shareable).length);
+        tryDone();
+      },
+      error: () => tryDone()
     });
 
-    this.borrowingService.getBorrowedBooksAsList().subscribe(borrowed => {
-      this.borrowedCount.set(borrowed.length);
-      this.activeBorrows.set(borrowed.filter(b => !b.returned).length);
-      this.recentActivity.set(borrowed.slice(0, 5));
-      this.checkLoading();
+    this.borrowingService.getBorrowedBooksAsList().subscribe({
+      next: (borrowed) => {
+        this.borrowedCount.set(borrowed.length);
+        this.activeBorrows.set(borrowed.filter(b => !b.returned).length);
+        this.recentActivity.set(borrowed.slice(0, 5));
+        tryDone();
+      },
+      error: () => tryDone()
     });
-  }
-
-  private checkLoading(): void {
-    if (this.recentBooks().length > 0 || this.recentActivity().length > 0) {
-      this.loading.set(false);
-    }
   }
 
   startSeed(): void {
@@ -281,13 +288,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadBooks(): void {
-    this.bookService.getAllBooksAsList({ size: 20 }).subscribe(books => {
-      this.recentBooks.set(books.slice(0, 6));
-      this.trendingBooks.set(books.slice(0, 4));
+    this.bookService.getAllBooksAsList({ size: 20 }).subscribe({
+      next: (books) => {
+        this.recentBooks.set(books.slice(0, 6));
+        this.trendingBooks.set(books.slice(0, 4));
+      },
+      error: () => {}
     });
-    this.bookService.getOwnerBooksAsList({ size: 50 }).subscribe(books => {
-      this.totalBooks.set(books.length);
-      this.sharedBooks.set(books.filter(b => b.shareable).length);
+    this.bookService.getOwnerBooksAsList({ size: 50 }).subscribe({
+      next: (books) => {
+        this.totalBooks.set(books.length);
+        this.sharedBooks.set(books.filter(b => b.shareable).length);
+      },
+      error: () => {}
     });
   }
 

@@ -91,10 +91,13 @@ export class ReturnBooksComponent implements OnInit {
   readonly filteredItems = signal<BorrowedBook[]>([]);
 
   ngOnInit(): void {
-    this.borrowingService.getReturnedBooksAsList().subscribe(b => {
-      this.items.set(b);
-      this.filterItems();
-      this.loading.set(false);
+    this.borrowingService.getReturnedBooksAsList().subscribe({
+      next: (b) => {
+        this.items.set(b);
+        this.filterItems();
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
     });
   }
 
@@ -108,12 +111,15 @@ export class ReturnBooksComponent implements OnInit {
 
   confirmReturn(bookId: number): void {
     this.confirmingId.set(bookId);
-    this.borrowingService.approveReturn(bookId).subscribe(() => {
-      this.items.update(list =>
-        list.map(b => b.id === bookId ? { ...b, returnApproved: true } : b)
-      );
-      this.filterItems();
-      this.confirmingId.set(null);
+    this.borrowingService.approveReturn(bookId).subscribe({
+      next: () => {
+        this.items.update(list =>
+          list.map(b => b.id === bookId ? { ...b, returnApproved: true } : b)
+        );
+        this.filterItems();
+        this.confirmingId.set(null);
+      },
+      error: () => this.confirmingId.set(null)
     });
   }
 }
