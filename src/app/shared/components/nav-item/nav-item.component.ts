@@ -22,7 +22,10 @@ import { IconComponent, IconName } from '../icon/icon.component';
     .nav-item:hover { background: rgba(255,255,255,0.04); color: #F5F1E8; }
     .nav-item.active { background: rgba(198, 169, 114, 0.1); color: #C6A972; }
     .nav-label { flex: 1; }
-    .nav-badge { background: rgba(198, 169, 114, 0.15); color: #C6A972; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }`
+    .nav-badge { background: rgba(198, 169, 114, 0.15); color: #C6A972; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+    :host-context(.sidebar.collapsed) .nav-label { display: none; }
+    :host-context(.sidebar.collapsed) .nav-badge { display: none; }
+    :host-context(.sidebar.collapsed) .nav-item { justify-content: center; padding: 10px 0; }`
 })
 export class NavItemComponent {
   readonly route = input.required<string>();

@@ -3,17 +3,20 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { BookService } from '../../../core/services/book.service';
 import { BorrowingService } from '../../../core/services/borrowing.service';
+import { FeedbackService } from '../../../core/services/feedback.service';
 import { Book } from '../../../core/models/book.model';
+import { FeedbackResponse } from '../../../core/models/borrowing.model';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 
 @Component({
   selector: 'app-book-detail',
   standalone: true,
-  imports: [RouterLink, ButtonComponent, BadgeComponent, IconComponent, SkeletonComponent, AvatarComponent],
+  imports: [RouterLink, ButtonComponent, BadgeComponent, IconComponent, SkeletonComponent, AvatarComponent, EmptyStateComponent],
   template: `<div class="page-enter">
     @if (loading()) {
       <div class="detail-skeleton">
@@ -107,7 +110,48 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
         </div>
       </div>
 
+      <div class="reviews-section">
+        <div class="reviews-header">
+          <h2>Reviews</h2>
+          @if (feedbacks().length > 0) {
+            <div class="avg-rating">
+              @for (s of [1,2,3,4,5]; track s) {
+                <app-icon name="star" size="16" [class.filled]="s <= Math.round(averageRating())" />
+              }
+              <span class="avg-text">{{ averageRating().toFixed(1) }} ({{ feedbacks().length }})</span>
+            </div>
+          }
+        </div>
 
+        @if (loadingFeedbacks()) {
+          <div class="reviews-skeleton">
+            @for (i of [1,2]; track i) {
+              <app-skeleton width="60%" height="14px" />
+              <app-skeleton width="80%" height="12px" />
+            }
+          </div>
+        } @else if (feedbacks().length === 0) {
+          <app-empty-state icon="star" title="No reviews yet" description="Be the first to share your thoughts about this book." />
+        } @else {
+          <div class="reviews-list">
+            @for (fb of feedbacks(); track fb) {
+              <div class="review-card" [class.own-review]="fb.ownFeedback">
+                <div class="review-stars">
+                  @for (s of [1,2,3,4,5]; track s) {
+                    <app-icon name="star" size="14" [class.filled]="s <= fb.note" />
+                  }
+                  @if (fb.ownFeedback) {
+                    <app-badge variant="info">Your review</app-badge>
+                  }
+                </div>
+                @if (fb.comment) {
+                  <p class="review-comment">{{ fb.comment }}</p>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
     }
   </div>`,
   styles: `.back-link { display: inline-flex; align-items: center; gap: 6px; color: #8A847C; font-size: 0.85rem; margin-bottom: 24px; transition: color 200ms ease; &:hover { color: #C6A972; } }
@@ -132,6 +176,20 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
     .owner-name-lg { display: block; font-size: 0.95rem; font-weight: 500; color: #F5F1E8; }
     .owner-label { font-size: 0.8rem; color: #5C5750; }
 
+    .reviews-section { margin-top: 48px; padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.04); }
+    .reviews-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .reviews-header h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.3rem; font-weight: 600; color: #F5F1E8; margin: 0; }
+    .avg-rating { display: flex; align-items: center; gap: 4px; }
+    .avg-rating .filled { color: #D4BC6A; fill: #D4BC6A; }
+    .avg-text { font-size: 0.85rem; color: #8A847C; margin-left: 6px; }
+    .reviews-skeleton { display: flex; flex-direction: column; gap: 12px; }
+    .reviews-list { display: flex; flex-direction: column; gap: 12px; }
+    .review-card { padding: 16px; background: #232527; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04); }
+    .review-card.own-review { border-color: rgba(198, 169, 114, 0.15); background: rgba(198, 169, 114, 0.04); }
+    .review-stars { display: flex; align-items: center; gap: 2px; margin-bottom: 8px; }
+    .review-stars .filled { color: #D4BC6A; fill: #D4BC6A; }
+    .review-comment { font-size: 0.85rem; color: #8A847C; line-height: 1.5; margin: 0; }
+
     @media (max-width: 768px) {
       .book-detail { grid-template-columns: 1fr; gap: 24px; }
       .detail-cover { max-width: 240px; }
@@ -143,7 +201,9 @@ export class BookDetailComponent implements OnInit {
   private router = inject(Router);
   private bookService = inject(BookService);
   private borrowingService = inject(BorrowingService);
+  private feedbackService = inject(FeedbackService);
   private sanitizer = inject(DomSanitizer);
+  readonly Math = Math;
 
   readonly book = signal<Book | null>(null);
   readonly ownerBookIds = signal<Set<number>>(new Set());
@@ -153,6 +213,13 @@ export class BookDetailComponent implements OnInit {
   readonly isOwner = computed(() => {
     const b = this.book();
     return b !== null && this.ownerBookIds().has(b.id);
+  });
+  readonly feedbacks = signal<FeedbackResponse[]>([]);
+  readonly loadingFeedbacks = signal(true);
+  readonly averageRating = computed(() => {
+    const fbs = this.feedbacks();
+    if (fbs.length === 0) return 0;
+    return fbs.reduce((sum, fb) => sum + fb.note, 0) / fbs.length;
   });
 
   ngOnInit(): void {
@@ -173,7 +240,19 @@ export class BookDetailComponent implements OnInit {
         next: (borrowed) => this.borrowed.set(borrowed.some(b => b.id === id && !b.returned)),
         error: () => {}
       });
+      this.loadFeedbacks(id);
     }
+  }
+
+  private loadFeedbacks(bookId: number): void {
+    this.loadingFeedbacks.set(true);
+    this.feedbackService.getFeedbacks(bookId).subscribe({
+      next: (fbs) => {
+        this.feedbacks.set(fbs);
+        this.loadingFeedbacks.set(false);
+      },
+      error: () => this.loadingFeedbacks.set(false)
+    });
   }
 
   requestBorrow(bookId: number): void {
