@@ -1,18 +1,22 @@
 const fs = require('fs');
 const path = require('path');
 
-let apiUrl = process.env['API_BASE_URL'];
+const envPath = path.join(__dirname, '..', '.env');
 
-if (!apiUrl) {
-  const envPath = path.join(__dirname, '..', '.env');
+function readEnvVar(key) {
+  if (process.env[key]) return process.env[key];
   if (fs.existsSync(envPath)) {
-    const envContent = fs.readFileSync(envPath, 'utf-8');
-    const match = envContent.match(/^API_BASE_URL=(.+)$/m);
-    if (match) {
-      apiUrl = match[1].trim();
-    }
+    const content = fs.readFileSync(envPath, 'utf-8');
+    const match = content.match(new RegExp(`^${key}=(.+)$`, 'm'));
+    if (match) return match[1].trim();
   }
+  return null;
 }
+
+const apiUrl = readEnvVar('API_BASE_URL');
+const kcUrl = readEnvVar('KEYCLOAK_URL');
+const kcRealm = readEnvVar('KEYCLOAK_REALM');
+const kcClientId = readEnvVar('KEYCLOAK_CLIENT_ID');
 
 if (!apiUrl) {
   console.log('No API_BASE_URL set — using default from environment.ts');
@@ -22,6 +26,11 @@ if (!apiUrl) {
 const content = `export const environment = {
   production: true,
   apiUrl: '${apiUrl}',
+  keycloak: {
+    url: '${kcUrl || 'http://localhost:9090'}',
+    realm: '${kcRealm || 'bookworms'}',
+    clientId: '${kcClientId || 'bookworms-client'}',
+  },
 };
 `;
 
@@ -30,4 +39,4 @@ fs.writeFileSync(
   content,
   'utf-8'
 );
-console.log(`environment.prod.ts generated with API_BASE_URL: ${apiUrl}`);
+console.log('environment.prod.ts generated');

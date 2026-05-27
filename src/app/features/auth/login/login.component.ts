@@ -1,56 +1,33 @@
-import { Component, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { Component, inject, signal, OnInit } from '@angular/core';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
-import { InputComponent } from '../../../shared/components/input/input.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [RouterLink, FormsModule, ButtonComponent, InputComponent, IconComponent],
+  imports: [RouterLink, ButtonComponent, IconComponent],
   template: `<div class="auth-form">
     <div class="auth-header">
       <h1>Welcome back</h1>
       <p>Sign in to your reading journey.</p>
     </div>
 
-    <form (ngSubmit)="onSubmit()" class="form-body">
-      <app-input
-        label="Email"
-        type="email"
-        placeholder="you@example.com"
-        iconName="mail"
-        [value]="email"
-        (valueChange)="email = $event"
-        [error]="getError('email')"
-      />
-
-      <app-input
-        label="Password"
-        type="password"
-        placeholder="Enter your password"
-        iconName="lock"
-        [value]="password"
-        (valueChange)="password = $event"
-        [error]="getError('password')"
-      />
-
-      @if (getError('general')) {
-        <div class="error-alert">
-          <app-icon name="alert-circle" size="16" />
-          <span>{{ getError('general') }}</span>
-        </div>
-      }
-
+    <div class="form-body">
       <app-button
-        type="submit"
-        label="Sign In"
-        [loading]="loading()"
+        label="Sign in with SSO"
+        (onClick)="login()"
         size="lg"
       />
-    </form>
+
+      @if (error()) {
+        <div class="error-alert">
+          <app-icon name="alert-circle" size="16" />
+          <span>{{ error() }}</span>
+        </div>
+      }
+    </div>
 
     <div class="auth-alt">
       <span class="auth-alt-text">Don't have an account?</span>
@@ -67,35 +44,22 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
     .auth-alt-text { font-size: 0.85rem; color: #5C5750; }
     .auth-link { font-size: 0.85rem; color: #C6A972; font-weight: 500; &:hover { color: #D4BC8A; } }`
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
-  email = '';
-  password = '';
-  loading = signal(false);
-  errors = signal<Record<string, string>>({});
+  readonly error = signal('');
 
-  getError(key: string): string {
-    return this.errors()[key] || '';
+  ngOnInit(): void {
+    const returnUrl = this.route.snapshot.queryParams['returnUrl'];
+    if (returnUrl && this.authService.isAuthenticated()) {
+      this.router.navigateByUrl(returnUrl);
+    }
   }
 
-  async onSubmit(): Promise<void> {
-    this.errors.set({});
-    const newErrors: Record<string, string> = {};
-
-    if (!this.email) newErrors['email'] = 'Email is required';
-    if (!this.password) newErrors['password'] = 'Password is required';
-
-    if (Object.keys(newErrors).length > 0) {
-      this.errors.set(newErrors);
-      return;
-    }
-
-    this.loading.set(true);
-    this.authService.login({ email: this.email, password: this.password }).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
-      error: () => this.loading.set(false)
-    });
+  login(): void {
+    const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+    this.authService.login(window.location.origin + returnUrl);
   }
 }

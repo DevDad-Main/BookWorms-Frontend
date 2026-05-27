@@ -1,111 +1,85 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
-import { API } from '../constants/api.constants';
-import { AuthResponse, LoginRequest, RegisterRequest, User } from '../models/user.model';
+import Keycloak from 'keycloak-js';
+import { User } from '../models/user.model';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly TOKEN_KEY = 'auth_token';
+  private readonly TOKEN_MIN_VALIDITY_SECONDS = 60;
+
+  private keycloak = new Keycloak({
+    url: environment.keycloak.url,
+    realm: environment.keycloak.realm,
+    clientId: environment.keycloak.clientId,
+  });
 
   currentUser = signal<User | null>(null);
   isAuthenticated = signal(false);
 
-  constructor(
-    private http: HttpClient,
-    private router: Router
-  ) {
-    this.loadStoredUser();
+  constructor(private router: Router) {}
+
+  async init(): Promise<boolean> {
+    try {
+      const authenticated = await this.keycloak.init({
+        onLoad: 'check-sso',
+        checkLoginIframe: false,
+        pkceMethod: 'S256',
+      });
+      if (authenticated) {
+        this.setUserFromToken();
+        console.log('User Authenticated');
+      }
+      return authenticated;
+    } catch {
+      return false;
+    }
   }
 
-  login(request: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${API.BASE_URL}${API.AUTH.LOGIN}`, request)
-      .pipe(tap(response => this.handleAuthResponse(response)));
+  login(redirectUri?: string): void {
+    this.keycloak.login({ redirectUri: redirectUri || window.location.origin + '/dashboard' });
   }
 
-  register(request: RegisterRequest): Observable<void> {
-    return this.http.post<void>(`${API.BASE_URL}${API.AUTH.REGISTER}`, request);
-  }
-
-  verifyEmail(token: string): Observable<void> {
-    const params = new HttpParams().set('token', token);
-    return this.http.get<void>(`${API.BASE_URL}${API.AUTH.VERIFY}`, { params });
+  register(): void {
+    this.keycloak.register({ redirectUri: window.location.origin + '/dashboard' });
   }
 
   logout(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
     this.currentUser.set(null);
     this.isAuthenticated.set(false);
-    this.router.navigate(['/login']);
+    this.keycloak.logout({ redirectUri: window.location.origin + '/login' });
   }
 
-  getToken(): string | null {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(this.TOKEN_KEY);
+  async getToken(): Promise<string | undefined> {
+    try {
+      await this.keycloak.updateToken(this.TOKEN_MIN_VALIDITY_SECONDS);
+      return this.keycloak.token;
+    } catch {
+      this.logout();
+      return undefined;
     }
-    return null;
   }
 
   getEmailFromToken(): string | null {
-    const token = this.getToken();
+    const token = this.keycloak.token;
     if (!token) return null;
     try {
       const payload = token.split('.')[1];
       const decoded = JSON.parse(atob(payload));
-      return decoded.sub || null;
+      return decoded.email || decoded.preferred_username || decoded.sub || null;
     } catch {
       return null;
     }
   }
 
-  private handleAuthResponse(response: AuthResponse): void {
-    localStorage.setItem(this.TOKEN_KEY, response.token);
-    const user = this.decodeToken(response.token);
-    if (user) {
-      this.currentUser.set(user);
+  private setUserFromToken(): void {
+    const tokenParsed = this.keycloak.tokenParsed;
+    if (tokenParsed) {
+      this.currentUser.set({
+        email: (tokenParsed as any).email || (tokenParsed as any).preferred_username || '',
+        role: (tokenParsed as any).realm_access?.roles?.[0] || 'USER',
+      });
       this.isAuthenticated.set(true);
-    }
-  }
-
-  private decodeToken(token: string): User | null {
-    try {
-      const payload = token.split('.')[1];
-      const decoded = JSON.parse(atob(payload));
-      return {
-        email: decoded.sub || '',
-        role: decoded.authorities?.[0] || 'USER',
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  private isTokenExpired(token: string): boolean {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const exp = payload.exp as number | undefined;
-      if (!exp) return false;
-      return Date.now() >= exp * 1000;
-    } catch {
-      return true;
-    }
-  }
-
-  private loadStoredUser(): void {
-    const token = this.getToken();
-    if (token) {
-      if (this.isTokenExpired(token)) {
-        this.logout();
-        return;
-      }
-      const user = this.decodeToken(token);
-      if (user) {
-        this.currentUser.set(user);
-        this.isAuthenticated.set(true);
-      } else {
-        this.logout();
-      }
     }
   }
 }

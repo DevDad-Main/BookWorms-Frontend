@@ -29,28 +29,7 @@ export const routes: Routes = [
       }
     ]
   },
-  {
-    path: 'verify-email',
-    canActivate: [publicGuard],
-    loadComponent: () => import('./layouts/auth-layout/auth-layout.component').then(m => m.AuthLayoutComponent),
-    children: [
-      {
-        path: '',
-        loadComponent: () => import('./features/auth/verify-email/verify-email.component').then(m => m.VerifyEmailComponent)
-      }
-    ]
-  },
-  {
-    path: 'activate-account',
-    canActivate: [publicGuard],
-    loadComponent: () => import('./layouts/auth-layout/auth-layout.component').then(m => m.AuthLayoutComponent),
-    children: [
-      {
-        path: '',
-        loadComponent: () => import('./features/auth/verify-email/verify-email.component').then(m => m.VerifyEmailComponent)
-      }
-    ]
-  },
+
   {
     path: '',
     canActivate: [authGuard],

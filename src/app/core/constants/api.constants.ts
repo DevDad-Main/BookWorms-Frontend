@@ -2,11 +2,6 @@ import { environment } from '../../../environments/environment';
 
 export const API = {
   BASE_URL: environment.apiUrl,
-  AUTH: {
-    LOGIN: '/auth/authenticate',
-    REGISTER: '/auth/register',
-    VERIFY: '/auth/activate-account',
-  },
   BOOKS: {
     BASE: '/books',
     BY_ID: (id: number) => `/books/${id}`,
