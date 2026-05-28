@@ -84,6 +84,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
       },
       {
+        path: 'debug/jwt',
+        loadComponent: () => import('./features/debug/debug-jwt.component').then(m => m.DebugJwtComponent)
+      },
+      {
         path: '',
         redirectTo: '/dashboard',
         pathMatch: 'full'

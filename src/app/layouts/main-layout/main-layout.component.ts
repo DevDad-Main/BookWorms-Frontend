@@ -43,6 +43,10 @@ import { DropdownComponent, DropdownItem } from '../../shared/components/dropdow
           <app-nav-item route="/borrowing/return" icon="refresh" label="Returns" />
           <app-nav-item route="/borrowing/reviews" icon="star" label="Reviews" />
         </div>
+        <div class="nav-section">
+          <span class="nav-section-label">Developer</span>
+          <app-nav-item route="/debug/jwt" icon="activity" label="Debug JWT" />
+        </div>
       </nav>
 
       <button class="sidebar-collapse-btn" (click)="toggleCollapse()">

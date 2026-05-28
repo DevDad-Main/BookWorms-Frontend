@@ -14,6 +14,7 @@ export const API = {
     RETURN: (id: number) => `/books/borrow/return/${id}`,
     APPROVE_RETURN: (id: number) => `/books/borrow/return/approve/${id}`,
     COVER: (id: number) => `/books/cover/${id}`,
+    DEBUG_JWT: '/books/debug/jwt',
   },
   FEEDBACK: {
     BASE: '/feedbacks',

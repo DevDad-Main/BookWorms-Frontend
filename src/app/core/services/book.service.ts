@@ -77,4 +77,8 @@ export class BookService {
     formData.append('file', file);
     return this.http.post<string>(`${API.BASE_URL}${API.BOOKS.COVER(id)}`, formData);
   }
+
+  debugJwt(): Observable<Record<string, unknown>> {
+    return this.http.get<Record<string, unknown>>(`${API.BASE_URL}${API.BOOKS.DEBUG_JWT}`);
+  }
 }

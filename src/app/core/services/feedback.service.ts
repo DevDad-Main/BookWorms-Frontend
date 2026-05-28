@@ -11,7 +11,7 @@ export class FeedbackService {
 
   getFeedbacks(bookId: number): Observable<FeedbackResponse[]> {
     return this.http.get<PageResponse<FeedbackResponse>>(`${API.BASE_URL}${API.FEEDBACK.BY_BOOK(bookId)}`, {
-      params: { page: 0, size: 20 }
+      params: { page: 1, size: 20 }
     }).pipe(map(p => p.content));
   }
 
