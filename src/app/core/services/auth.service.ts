@@ -61,6 +61,10 @@ export class AuthService {
     }
   }
 
+  getAccountManagementUrl(): string {
+    return `${environment.keycloak.url}/realms/${environment.keycloak.realm}/account`;
+  }
+
   getEmailFromToken(): string | null {
     const token = this.keycloak.token;
     if (!token) return null;

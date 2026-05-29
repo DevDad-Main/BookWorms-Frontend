@@ -153,6 +153,8 @@ export class MainLayoutComponent {
       this.authService.logout();
     } else if (item.value === 'profile') {
       this.router.navigate(['/profile']);
+    } else if (item.value === 'settings') {
+      window.open(this.authService.getAccountManagementUrl(), '_blank');
     }
   }
 
